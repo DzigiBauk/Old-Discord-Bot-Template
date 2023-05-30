@@ -17,10 +17,11 @@ const fs = require('node:fs');
 const discord_js_1 = __importDefault(require("discord.js"));
 //Client + Flags
 const client = new discord_js_1.default.Client({ intents: [
-        discord_js_1.default.Intents.FLAGS.GUILDS,
-        discord_js_1.default.Intents.FLAGS.GUILD_MESSAGES,
-        discord_js_1.default.Intents.FLAGS.GUILD_PRESENCES,
-        discord_js_1.default.Intents.FLAGS.GUILD_MEMBERS
+        discord_js_1.default.GatewayIntentBits.Guilds,
+        discord_js_1.default.GatewayIntentBits.GuildMessages,
+        discord_js_1.default.GatewayIntentBits.GuildPresences,
+        discord_js_1.default.GatewayIntentBits.GuildMembers,
+        discord_js_1.default.GatewayIntentBits.MessageContent
     ] });
 //Command Collection
 let commands = new discord_js_1.default.Collection();
@@ -40,11 +41,22 @@ client.on("messageCreate", (msg) => __awaiter(void 0, void 0, void 0, function* 
     }
 }));
 //Command Loader
-const commandFiles = fs.readdirSync('./commands').filter((file) => file.endsWith('.js'));
-for (const file of commandFiles) {
-    const commandClass = require(`./commands/${file}`).default;
-    const command = new commandClass();
-    commands.set(command.name(), command);
+commandLoader('./commands');
+function commandLoader(path) {
+    const allFiles = fs.readdirSync(path);
+    console.log(allFiles);
+    const commandFiles = allFiles.filter((file) => file.endsWith('js'));
+    for (const file of allFiles) {
+        if (fs.statSync(path + "/" + file).isDirectory()) {
+            commandLoader(path + "/" + file);
+        }
+    }
+    for (const file of commandFiles) {
+        const commandClass = require(`${path}/${file}`).default;
+        const command = new commandClass();
+        commands.set(command.name(), command);
+        console.log(`[!] Command loaded ${command.name()}`);
+    }
 }
 //Command Handler
 function commandHandler(msg, args) {
